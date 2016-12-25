@@ -45,7 +45,7 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
             httpURLConnection =(HttpURLConnection)url.openConnection();
             httpURLConnection.setReadTimeout(10000); // millis
             httpURLConnection.setConnectTimeout(15000); // millis
-
+            Log.i(TAG,"htt ");
 
             InputStream is = httpURLConnection.getInputStream();
 
@@ -62,7 +62,8 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
             return result;
 
         } catch (Exception e) {
-            return null;
+            //Toast.makeText(MainActivity.context,"Error Occured!",Toast.LENGTH_SHORT).show();
+            return  null;
         }
     }
 
@@ -107,24 +108,43 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
             // ,"sys":{"type":1,"id":7618,"message":0.0095,"country":"JP","sunrise":1482356929,"sunset":1482392227},"id":1851632,"name":"Shuzenji","cod":200}
 
 
-            if((System.currentTimeMillis()<=date1.getTime()-60*60*1000) && MyService.linearLayout==null && MyService.wm==null){
+            if((System.currentTimeMillis()<=date1.getTime()-60*60*1000)){
                 Log.i(TAG,"in if");
-                Intent intent = new Intent(MainActivity.context,MyService.class);
-                MainActivity.context.startService(intent);
-
-            }
-            //If user turn on app in night before sunrise then overlay should create.
-
-                Intent intent2 = new Intent(MainActivity.context, MyService.class);
-                PendingIntent pendingIntent2 = PendingIntent.getService(MainActivity.context, 0, intent2, 0);
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() , pendingIntent2);
-                //MyService creates overlay on clear screen
-                //Overlay should start creating before 30 min sunrise
+                if(MyService.linearLayout != null && MyService.wm != null) {
+                    Intent intent = new Intent(MainActivity.context, MyService.class);
+                    MainActivity.context.startService(intent);
+                }
 
                 Intent intent1 = new Intent(MainActivity.context, MyServiceReverse.class);
                 PendingIntent pendingIntent1 = PendingIntent.getService(MainActivity.context, 0, intent1, 0);
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+30*60*1000 , pendingIntent1);
-                //MyServiceReverse removes overlay from screen
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP,date1.getTime()-30*60*1000 , pendingIntent1);
+
+                Intent intent2 = new Intent(MainActivity.context, MyService.class);
+                PendingIntent pendingIntent2 = PendingIntent.getService(MainActivity.context, 0, intent2, 0);
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, date2.getTime()-30*60*1000 , pendingIntent2);
+            }
+
+            else if(System.currentTimeMillis()<=date2.getTime()-60*60*1000 && System.currentTimeMillis()>=date1.getTime()){
+                Intent intent2 = new Intent(MainActivity.context, MyService.class);
+                PendingIntent pendingIntent2 = PendingIntent.getService(MainActivity.context, 0, intent2, 0);
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, date2.getTime()-30*60*1000 , pendingIntent2);
+            }
+            else if(System.currentTimeMillis()>=date2.getTime()){
+                Intent intent = new Intent(MainActivity.context, MyService.class);
+                MainActivity.context.startService(intent);
+            }
+
+            //If user turn on app in night before sunrise then overlay should create.
+
+
+
+                //MyService creates overlay on clear screen
+                //Overlay should start creating before 30 min sunrise
+/*
+                Intent intent1 = new Intent(MainActivity.context, MyServiceReverse.class);
+                PendingIntent pendingIntent1 = PendingIntent.getService(MainActivity.context, 0, intent1, 0);
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP,date1.getTime()-30*60*1000 , pendingIntent1);
+  */              //MyServiceReverse removes overlay from screen
                 //Overlay should start disappearing before 30 min sunset
 
 

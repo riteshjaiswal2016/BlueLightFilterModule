@@ -165,5 +165,7 @@ public class MyService extends Service {
     @Override
     public void onDestroy() {
         timer.cancel();
+        if(linearLayout!=null && wm!=null)
+            wm.removeView(linearLayout);
     }
 }

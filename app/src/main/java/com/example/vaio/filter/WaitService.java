@@ -64,6 +64,7 @@ public class WaitService extends Service {
         Date date3=null;
         try {
             date3= sdf2.parse(dateTimeInString);
+
             //current date with 00:01 time in format yyyy-MM-dd HH:mm
         } catch (ParseException e) {
             e.printStackTrace();
