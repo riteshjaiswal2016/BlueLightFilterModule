@@ -28,6 +28,7 @@ import java.util.TimerTask;
 public class DownloadTask extends AsyncTask<String,Void,String> {
     static final String TAG ="tag";
     static String riseTime,setTime;
+    AlarmManager alarmManager;
     //sunrise and sunset time in HH:mm format
 
     @Override
@@ -35,6 +36,7 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
         URL url;
         HttpURLConnection httpURLConnection;
         int data;
+
         String result ="";
 
         try {
@@ -84,7 +86,7 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
 
             SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
 
-            AlarmManager alarmManager =(AlarmManager)DownloadStarter.context2.getSystemService(Context.ALARM_SERVICE);
+            alarmManager =(AlarmManager)MainActivity.context.getSystemService(Context.ALARM_SERVICE);
 
                 sunRiseLong = suntimesObject.getLong("sunrise");
                 Date date1 = new Date(sunRiseLong * 1000L);
@@ -94,6 +96,7 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
                 sunSetLong = suntimesObject.getLong("sunset");
                 Date date2 = new Date(sunSetLong * 1000L);
                 setTime = sdf2.format(date2);
+
                 MainActivity.setText.setText(setTime);
 
             //JSON RESPONSE-
@@ -104,24 +107,26 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
             // ,"sys":{"type":1,"id":7618,"message":0.0095,"country":"JP","sunrise":1482356929,"sunset":1482392227},"id":1851632,"name":"Shuzenji","cod":200}
 
 
-            if((System.currentTimeMillis()<=date1.getTime()-30*60*1000) && MyService.linearLayout==null && MyService.wm==null){
-                Intent intent = new Intent(DownloadStarter.context2,MyService.class);
-                MainActivity.context.sendBroadcast(intent);
+            if((System.currentTimeMillis()<=date1.getTime()-60*60*1000) && MyService.linearLayout==null && MyService.wm==null){
+                Log.i(TAG,"in if");
+                Intent intent = new Intent(MainActivity.context,MyService.class);
+                MainActivity.context.startService(intent);
+
             }
             //If user turn on app in night before sunrise then overlay should create.
-            else {
-                Intent intent2 = new Intent(DownloadStarter.context2, MyService.class);
-                PendingIntent pendingIntent2 = PendingIntent.getBroadcast(DownloadStarter.context2, 0, intent2, 0);
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, date2.getTime() - 30 * 60 * 1000, pendingIntent2);
+
+                Intent intent2 = new Intent(MainActivity.context, MyService.class);
+                PendingIntent pendingIntent2 = PendingIntent.getService(MainActivity.context, 0, intent2, 0);
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() , pendingIntent2);
                 //MyService creates overlay on clear screen
                 //Overlay should start creating before 30 min sunrise
 
-                Intent intent1 = new Intent(DownloadStarter.context2, MyServiceReverse.class);
-                PendingIntent pendingIntent1 = PendingIntent.getBroadcast(DownloadStarter.context2, 0, intent1, 0);
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, date1.getTime()-30*60*1000, pendingIntent1);
+                Intent intent1 = new Intent(MainActivity.context, MyServiceReverse.class);
+                PendingIntent pendingIntent1 = PendingIntent.getService(MainActivity.context, 0, intent1, 0);
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+30*60*1000 , pendingIntent1);
                 //MyServiceReverse removes overlay from screen
                 //Overlay should start disappearing before 30 min sunset
-            }
+
 
         } catch (JSONException e) {
             Toast.makeText(MainActivity.context,"Error in Downloaded Data.",Toast.LENGTH_SHORT).show();
@@ -129,7 +134,13 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
 
     }
 
-/*
+    @Override
+    protected void onCancelled() {
+        super.onCancelled();
+        alarmManager=null;
+    }
+
+    /*
     public long differenceInSec(Date time1,Date time2){
         long mills = time1.getTime()-time2.getTime();
         return mills/1000;

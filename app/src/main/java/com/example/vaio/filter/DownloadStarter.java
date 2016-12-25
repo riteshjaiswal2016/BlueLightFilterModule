@@ -1,34 +1,45 @@
 package com.example.vaio.filter;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-//This class is finding user location data longitude and lattitude
-public class DownloadStarter extends BroadcastReceiver {
-    final String TAG ="tag";
-    String provider;
-    LocationManager lm;
-    Double lat,lon;
-    static Context context2;
 
+public class DownloadStarter extends Service {
     public DownloadStarter() {
     }
 
     @Override
-    public void onReceive(Context context, Intent intent) {
-        lm = (LocationManager) context.getSystemService(context.LOCATION_SERVICE);
+    public IBinder onBind(Intent intent) {
+        // TODO: Return the communication channel to the service.
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+
+    final String TAG ="tag";
+    String provider;
+    LocationManager lm;
+    Double lat,lon;
+    DownloadTask downloadTask;
+    //static Context context2;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        lm = (LocationManager) MainActivity.context.getSystemService(MainActivity.context.LOCATION_SERVICE);
         provider = lm.getBestProvider(new Criteria(), false);
 
-        context2 = context;
+        //context2 = context;
 
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(MainActivity.context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -43,9 +54,17 @@ public class DownloadStarter extends BroadcastReceiver {
 
         lat = location.getLatitude();
         lon = location.getLongitude();
-
-        DownloadTask downloadTask = new DownloadTask();
+        Log.i(TAG,"before any if else");
+        downloadTask = new DownloadTask();
         downloadTask.execute("http://api.openweathermap.org/data/2.5/weather?lat="+lat.toString()+"&lon="+lon.toString()+"&appid=da0bb2167b5ecda81fa4009668f0a970");
+        Log.i(TAG,"after exe");
 
+    }
+
+
+    @Override
+    public void onDestroy() {
+        downloadTask.onCancelled();
+        downloadTask=null;
     }
 }

@@ -26,6 +26,7 @@ import java.util.TimerTask;
 //and repeat this alarm after each 24*60*60*1000 mills (24hrs)
 public class WaitService extends Service {
     static final String TAG = "tag";
+    AlarmManager am;
 
     public WaitService() {
     }
@@ -41,12 +42,12 @@ public class WaitService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        AlarmManager am = (AlarmManager)getSystemService(ALARM_SERVICE);
+        am = (AlarmManager)getSystemService(ALARM_SERVICE);
 
         Intent intent =new Intent(WaitService.this,DownloadStarter.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(WaitService.this,0,intent,0);
+        PendingIntent pendingIntent = PendingIntent.getService(WaitService.this,0,intent,0);
         //pendingIntent open DownloadStarter which find location
-
+        Log.i(TAG,"pend");
         Date date2 =new Date();
         //This is current day date and time
 
@@ -68,9 +69,14 @@ public class WaitService extends Service {
             e.printStackTrace();
         }
 
+        Log.i(TAG,"before alarming");
         am.setRepeating(am.RTC_WAKEUP,date3.getTime(),24*60*60*1000,pendingIntent);
         //date3.getTime gives Unix UTC format time of current date 00:01 time
         //It sets alarm at 00:01 and repeats after every 24hr
     }
 
+    @Override
+    public void onDestroy() {
+        am = null;
+    }
 }

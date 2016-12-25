@@ -17,59 +17,72 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 //Creating overlay
-public class MyService extends BroadcastReceiver {
-    static LinearLayout linearLayout=null;
-    final static String TAG ="tag";
+public class MyService extends Service {
+    static LinearLayout linearLayout = null;
+    final static String TAG = "tag";
     Timer timer;
-    static WindowManager wm=null;
+    static WindowManager wm = null;
 
-    Handler handler = new Handler(){
-        int normalCT=6000;
+
+    Handler handler = new Handler() {
+        int normalCT = 6000;
+        int opacity = 0;
         //Normat Color Temp of overlay for clear screen
-        int opacity=0;
+
         int RGB[];
         //array to recieve data from colorTemperatureToRGB() method
 
         @Override
         public void handleMessage(Message msg) {
-            if(normalCT<=1200){
-                timer.cancel();
-                //Reduce color temp upto 1200K then stop the timer.
-            }
+            if (msg.arg1 == 1)
+                wm.addView(linearLayout, (WindowManager.LayoutParams) msg.obj);
+
             else {
-                RGB = colorTemperatureToRGB(normalCT);
 
-                linearLayout.setBackgroundColor(Color.argb(opacity, RGB[0], RGB[1], RGB[2]));
-                //changing background color of overlay
+                if (normalCT <= 1200) {
+                    timer.cancel();
 
-                Log.i(TAG,"changing");
+                    //Reduce color temp upto 1200K then stop the timer.
+                } else {
+                    RGB = colorTemperatureToRGB(normalCT);
 
-                normalCT -= 60;
-                //Each time reducing color temp by 60K
+                    linearLayout.setBackgroundColor(Color.argb(opacity, RGB[0], RGB[1], RGB[2]));
+                    //changing background color of overlay
 
-                if(opacity<40)
-                    opacity+=1;
-                //Increasing opacity to 40 max
+                    Log.i(TAG, "changing" + RGB[0] + " " + RGB[1] + " " + RGB[2]);
+
+                    normalCT -= 60;
+                    //Each time reducing color temp by 60K
+
+                    if (opacity < 30)
+                        opacity += 1;
+                    Log.i(TAG, "" + opacity);
+                    //Increasing opacity to 40 max
+                }
             }
         }
     };
 
-
     @Override
-    public void onReceive(Context context, Intent intent) {
-        linearLayout = new LinearLayout(context);
+    public void onCreate() {
+        super.onCreate();
+
+        linearLayout = new LinearLayout(MainActivity.context);
 
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 PixelFormat.TRANSLUCENT);
 
-        wm = (WindowManager)context.getSystemService(context.WINDOW_SERVICE);
+        wm = (WindowManager) MainActivity.context.getSystemService(MainActivity.context.WINDOW_SERVICE);
 
-        wm.addView(linearLayout,params);
+        Message msg = Message.obtain();
+        msg.arg1 = 1;
+        msg.obj = params;
+        handler.sendMessage(msg);
 
-        Log.i(TAG,"overlayed");
+        Log.i(TAG, "overlayed");
 
         timer = new Timer();
         //Setting timer which creates overlay in 30min gradually as suggested in Report
@@ -83,60 +96,74 @@ public class MyService extends BroadcastReceiver {
                                       }
                                   },
                 0,
-                60000);
-                //60 Second between each change in overlay opacity and color temp.
+                600);
+        //60 Second between each change in overlay opacity and color temp.
 
     }
 
     //It converts Color Temp. in kelvin to values of R G B(array)
-    public int[] colorTemperatureToRGB(double kelvin){
+    public int[] colorTemperatureToRGB(double kelvin) {
         double temp = kelvin / 100;
 
         double red, green, blue;
 
-        if( temp <= 66 ){
+        if (temp <= 66) {
 
             red = 255;
 
             green = temp;
             green = 99.4708025861 * Math.log(green) - 161.1195681661;
 
-            if( temp <= 19)
+            if (temp <= 19)
                 blue = 0;
             else {
-                blue = temp-10;
+                blue = temp - 10;
                 blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
             }
-        }
-        else {
+        } else {
             red = temp - 60;
             red = 329.698727446 * Math.pow(red, -0.1332047592);
 
             green = temp - 60;
-            green = 288.1221695283 * Math.pow(green, -0.0755148492 );
+            green = 288.1221695283 * Math.pow(green, -0.0755148492);
 
             blue = 255;
         }
 
-            int r = (int)red;
-            int g = (int)green;
-            int b = (int)blue;
+        int r = (int) red;
+        int g = (int) green;
+        int b = (int) blue;
 
-            r=clamp(r,0,255);
-            g=clamp(g,0,255);
-            b=clamp(b,0,255);
+        r = clamp(r, 0, 255);
+        g = clamp(g, 0, 255);
+        b = clamp(b, 0, 255);
 
-            int functionReturnRGB[]={r,g,b};
+        int functionReturnRGB[] = {r, g, b};
 
-            return functionReturnRGB;
+        return functionReturnRGB;
     }
 
 
-    int clamp(int x,int min,int max ) {
-        if(x<min){ return min; }
-        if(x>max){ return max; }
+    int clamp(int x, int min, int max) {
+        if (x < min) {
+            return min;
+        }
+        if (x > max) {
+            return max;
+        }
 
         return x;
     }
 
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        // TODO: Return the communication channel to the service.
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
+    public void onDestroy() {
+        timer.cancel();
+    }
 }

@@ -1,11 +1,11 @@
 package com.example.vaio.filter;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
+import android.app.Service;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.view.WindowManager;
@@ -14,12 +14,17 @@ import android.widget.LinearLayout;
 import java.util.Timer;
 import java.util.TimerTask;
 
-//Removing Overlay
-public class MyServiceReverse extends BroadcastReceiver {
+public class MyServiceReverse extends Service {
     final static String TAG ="tag";
     Timer timer;
 
     public MyServiceReverse() {
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        // TODO: Return the communication channel to the service.
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     Handler handler = new Handler(){
@@ -29,9 +34,12 @@ public class MyServiceReverse extends BroadcastReceiver {
 
         @Override
         public void handleMessage(Message msg) {
-            if(currentCT<=6000){
+            if(currentCT>=6000){
                 timer.cancel();
                 MyService.wm.removeView(MyService.linearLayout);
+                MyService.wm=null;
+                MyService.linearLayout=null;
+                Log.i(TAG,"remove view");
             }
             else {
                 RGB = colorTemperatureToRGB(currentCT);
@@ -48,26 +56,31 @@ public class MyServiceReverse extends BroadcastReceiver {
         }
     };
 
+
     @Override
-    public void onReceive(Context context, Intent intent) {
-            if(MyService.linearLayout==null && MyService.wm==null)
-                return;
-            //Dont try to remove overlay if it doesnt exist
+    public void onCreate() {
+        super.onCreate();
 
-            timer = new Timer();
-
-            //Set the schedule function and rate
-            timer.scheduleAtFixedRate(new TimerTask() {
-                                          @Override
-                                          public void run() {
-                                              handler.sendEmptyMessage(0);
-                                          }
-                                      },
-                    //Set how long before to start calling the TimerTask (in milliseconds)
-                    0,
-                    //Set the amount of time between each execution (in milliseconds)
-                    60000);
+        if(MyService.linearLayout==null && MyService.wm==null) {
+            Log.i(TAG, "returning");
+            return;
         }
+        //Dont try to remove overlay if it doesnt exist
+
+        timer = new Timer();
+
+        //Set the schedule function and rate
+        timer.scheduleAtFixedRate(new TimerTask() {
+                                      @Override
+                                      public void run() {
+                                          handler.sendEmptyMessage(0);
+                                      }
+                                  },
+                //Set how long before to start calling the TimerTask (in milliseconds)
+                0,
+                //Set the amount of time between each execution (in milliseconds)
+                600);
+    }
 
 
     public int[] colorTemperatureToRGB(double kelvin){
@@ -119,4 +132,10 @@ public class MyServiceReverse extends BroadcastReceiver {
 
         return x;
     }
+
+    @Override
+    public void onDestroy() {
+            timer.cancel();
+    }
 }
+
