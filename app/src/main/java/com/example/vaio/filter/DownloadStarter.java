@@ -12,8 +12,11 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.provider.Settings;
+import android.support.annotation.MainThread;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.Toast;
@@ -32,21 +35,19 @@ public class DownloadStarter extends Service {
 
 
     final String TAG = "tag";
-    String provider;
     LocationManager lm;
-    Double lat, lon;
-    DownloadTask downloadTask;
-    //static Context context2;
+    static Location location;
+    static Double lat, lon;
+    static DownloadTask downloadTask;
+    static Context DownloadStarterContext;
+
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        //lm = (LocationManager) MainActivity.context.getSystemService(LOCATION_SERVICE);
-        //provider = lm.getBestProvider(new Criteria(), false);
+        DownloadStarterContext = getApplicationContext();
 
-
-        //context2 = context;
         Log.i(TAG, "before any if else");
         if (ActivityCompat.checkSelfPermission(MainActivity.context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -61,19 +62,24 @@ public class DownloadStarter extends Service {
         }
 
 
-        Location location = getLastKnownLocation();
+        location = getLastKnownLocation();
 
-        if (location == null)
-            Log.i(TAG, "loc null");
+        while(location == null){
+            location=getLastKnownLocation();
+            Log.i(TAG,"Loc null");
+        }
+
 
         lat = location.getLatitude();
         lon = location.getLongitude();
 
-        Log.i(TAG, "loccc bfor");
-        //if(isInternetOn()) {
+        startService(new Intent(this,WeatherService.class));
+
+        Log.i(TAG, "Weather Service started");
+
         downloadTask = new DownloadTask();
         downloadTask.execute("http://api.openweathermap.org/data/2.5/weather?lat=" + lat.toString() + "&lon=" + lon.toString() + "&appid=da0bb2167b5ecda81fa4009668f0a970");
-        //}
+
         Log.i(TAG, "after exe");
 
     }
@@ -93,10 +99,10 @@ public class DownloadStarter extends Service {
                 //                                          int[] grantResults)
                 // to handle the case where the user grants the permission. See the documentation
                 // for ActivityCompat#requestPermissions for more details.
-                Log.i(TAG,"problem");
+
             }
             Location l = lm.getLastKnownLocation(provider);
-
+            Log.i(TAG,"Location");
 
             if (l == null) {
                 continue;
@@ -114,7 +120,6 @@ public class DownloadStarter extends Service {
     public void onDestroy() {
         downloadTask.onCancelled();
         downloadTask=null;
-
 
     }
 }

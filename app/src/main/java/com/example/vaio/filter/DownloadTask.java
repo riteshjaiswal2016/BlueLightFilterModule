@@ -27,7 +27,7 @@ import java.util.TimerTask;
 //This deals with JSON result to find sunrise and sunset time in HH:mm format
 public class DownloadTask extends AsyncTask<String,Void,String> {
     static final String TAG ="tag";
-    static String riseTime,setTime;
+    static String riseTime=null,setTime=null;
     AlarmManager alarmManager;
     //sunrise and sunset time in HH:mm format
 
@@ -62,7 +62,6 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
             return result;
 
         } catch (Exception e) {
-            //Toast.makeText(MainActivity.context,"Error Occured!",Toast.LENGTH_SHORT).show();
             return  null;
         }
     }
@@ -72,22 +71,27 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
     protected void onPostExecute(String downloadData) {
         super.onPostExecute(downloadData);
 
-        try {
-            JSONObject jsonObject = new JSONObject(downloadData);
+        if(downloadData==null) {
+            Toast.makeText(DownloadStarter.DownloadStarterContext, "Data Download Failed", Toast.LENGTH_SHORT).show();
+            new DownloadTask().execute("http://api.openweathermap.org/data/2.5/weather?lat=" + DownloadStarter.lat.toString() + "&lon=" + DownloadStarter.lon.toString() + "&appid=da0bb2167b5ecda81fa4009668f0a970");
+        }
+        else {
+            try {
+                JSONObject jsonObject = new JSONObject(downloadData);
 
-            JSONObject suntimesObject = new JSONObject(jsonObject.getString("sys"));
+                JSONObject suntimesObject = new JSONObject(jsonObject.getString("sys"));
 
-            Date date =new Date();
+                Date date = new Date();
 
-            SimpleDateFormat sdf1 = new SimpleDateFormat("HH");
-            String time = sdf1.format(date);
+                SimpleDateFormat sdf1 = new SimpleDateFormat("HH");
+                String time = sdf1.format(date);
 
-            long sunRiseLong;
-            long sunSetLong;
+                long sunRiseLong;
+                long sunSetLong;
 
-            SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
+                SimpleDateFormat sdf2 = new SimpleDateFormat("HH:mm");
 
-            alarmManager =(AlarmManager)MainActivity.context.getSystemService(Context.ALARM_SERVICE);
+                alarmManager = (AlarmManager) MainActivity.context.getSystemService(Context.ALARM_SERVICE);
 
                 sunRiseLong = suntimesObject.getLong("sunrise");
                 Date date1 = new Date(sunRiseLong * 1000L);
@@ -97,59 +101,43 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
                 sunSetLong = suntimesObject.getLong("sunset");
                 Date date2 = new Date(sunSetLong * 1000L);
                 setTime = sdf2.format(date2);
-
                 MainActivity.setText.setText(setTime);
 
-            //JSON RESPONSE-
-            //{"coord":{"lon":138.93,"lat":34.97},"weather":[{"id":521,"main":"Rain","description":"shower rain","icon":"09d"}
-            // ,{"id":701,"main":"Mist","description":"mist","icon":"50d"}]
-            // ,"base":"stations","main":{"temp":288.1,"pressure":1016,"humidity":93,"temp_min":284.15,"temp_max":293.15}
-            // ,"visibility":14484,"wind":{"speed":3.6,"deg":200},"clouds":{"all":90},"dt":1482376380
-            // ,"sys":{"type":1,"id":7618,"message":0.0095,"country":"JP","sunrise":1482356929,"sunset":1482392227},"id":1851632,"name":"Shuzenji","cod":200}
+
+                //JSON RESPONSE-
+                //{"coord":{"lon":138.93,"lat":34.97},"weather":[{"id":521,"main":"Rain","description":"shower rain","icon":"09d"}
+                // ,{"id":701,"main":"Mist","description":"mist","icon":"50d"}]
+                // ,"base":"stations","main":{"temp":288.1,"pressure":1016,"humidity":93,"temp_min":284.15,"temp_max":293.15}
+                // ,"visibility":14484,"wind":{"speed":3.6,"deg":200},"clouds":{"all":90},"dt":1482376380
+                // ,"sys":{"type":1,"id":7618,"message":0.0095,"country":"JP","sunrise":1482356929,"sunset":1482392227},"id":1851632,"name":"Shuzenji","cod":200}
 
 
-            if((System.currentTimeMillis()<=date1.getTime()-60*60*1000)){
-                Log.i(TAG,"in if");
-                if(MyService.linearLayout != null && MyService.wm != null) {
+                if ((System.currentTimeMillis() <= date1.getTime() - 60 * 60 * 1000)) {
+                    Log.i(TAG, "in if");
+                    if (MyService.linearLayout != null && MyService.wm != null) {
+                        Intent intent = new Intent(MainActivity.context, MyService.class);
+                        MainActivity.context.startService(intent);
+                    }
+
+                    Intent intent1 = new Intent(MainActivity.context, MyServiceReverse.class);
+                    PendingIntent pendingIntent1 = PendingIntent.getService(MainActivity.context, 0, intent1, 0);
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, date1.getTime() - 30 * 60 * 1000, pendingIntent1);
+
+                    Intent intent2 = new Intent(MainActivity.context, MyService.class);
+                    PendingIntent pendingIntent2 = PendingIntent.getService(MainActivity.context, 0, intent2, 0);
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, date2.getTime() - 30 * 60 * 1000, pendingIntent2);
+                } else if (System.currentTimeMillis() <= date2.getTime() - 60 * 60 * 1000 && System.currentTimeMillis() >= date1.getTime()) {
+                    Intent intent2 = new Intent(MainActivity.context, MyService.class);
+                    PendingIntent pendingIntent2 = PendingIntent.getService(MainActivity.context, 0, intent2, 0);
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, date2.getTime() - 30 * 60 * 1000, pendingIntent2);
+                } else if (System.currentTimeMillis() >= date2.getTime()) {
                     Intent intent = new Intent(MainActivity.context, MyService.class);
                     MainActivity.context.startService(intent);
                 }
 
-                Intent intent1 = new Intent(MainActivity.context, MyServiceReverse.class);
-                PendingIntent pendingIntent1 = PendingIntent.getService(MainActivity.context, 0, intent1, 0);
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP,date1.getTime()-30*60*1000 , pendingIntent1);
-
-                Intent intent2 = new Intent(MainActivity.context, MyService.class);
-                PendingIntent pendingIntent2 = PendingIntent.getService(MainActivity.context, 0, intent2, 0);
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, date2.getTime()-30*60*1000 , pendingIntent2);
+            } catch (JSONException e) {
+                Toast.makeText(DownloadStarter.DownloadStarterContext, "Data Incompatible", Toast.LENGTH_SHORT).show();
             }
-
-            else if(System.currentTimeMillis()<=date2.getTime()-60*60*1000 && System.currentTimeMillis()>=date1.getTime()){
-                Intent intent2 = new Intent(MainActivity.context, MyService.class);
-                PendingIntent pendingIntent2 = PendingIntent.getService(MainActivity.context, 0, intent2, 0);
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, date2.getTime()-30*60*1000 , pendingIntent2);
-            }
-            else if(System.currentTimeMillis()>=date2.getTime()){
-                Intent intent = new Intent(MainActivity.context, MyService.class);
-                MainActivity.context.startService(intent);
-            }
-
-            //If user turn on app in night before sunrise then overlay should create.
-
-
-
-                //MyService creates overlay on clear screen
-                //Overlay should start creating before 30 min sunrise
-/*
-                Intent intent1 = new Intent(MainActivity.context, MyServiceReverse.class);
-                PendingIntent pendingIntent1 = PendingIntent.getService(MainActivity.context, 0, intent1, 0);
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP,date1.getTime()-30*60*1000 , pendingIntent1);
-  */              //MyServiceReverse removes overlay from screen
-                //Overlay should start disappearing before 30 min sunset
-
-
-        } catch (JSONException e) {
-            Toast.makeText(MainActivity.context,"Error in Downloaded Data.",Toast.LENGTH_SHORT).show();
         }
 
     }
@@ -158,13 +146,8 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
     protected void onCancelled() {
         super.onCancelled();
         alarmManager=null;
+
     }
 
-    /*
-    public long differenceInSec(Date time1,Date time2){
-        long mills = time1.getTime()-time2.getTime();
-        return mills/1000;
-    }
-*/
 
 }

@@ -76,16 +76,6 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Run in Background"
-        android:id="@+id/button"
-        android:onClick="onBackground"
-        android:layout_alignTop="@+id/luxText"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="44dp" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="Exit"
         android:id="@+id/button2"
         android:layout_alignParentBottom="true"

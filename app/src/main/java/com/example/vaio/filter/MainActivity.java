@@ -9,6 +9,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -24,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     static Context context;
     static TextView riseText, setText, luxText;
     static int count =0;
+
     //Textview for Sunrise Time,Sunset Time and ambient Brightness
     final static String TAG = "tag";
 
@@ -33,11 +35,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //WifiManager wifiManager =(WifiManager)getSystemService(WIFI_SERVICE);
-        //wifiManager.setWifiEnabled(true);
 
 
-        if(count==0) {
+
+        WifiManager wifiManager =(WifiManager)getSystemService(WIFI_SERVICE);
+
+        if(!wifiManager.isWifiEnabled())
+           wifiManager.setWifiEnabled(true);
+
+
+
             context = this.getApplicationContext();
 
             riseText = (TextView) findViewById(R.id.riseText);
@@ -51,24 +58,33 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "started serviec");
             Intent intent1 = new Intent(this, SensorService.class);
             startService(intent1);
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if(DownloadTask.riseTime!=null && DownloadTask.setTime!=null){
+            riseText.setText(DownloadTask.riseTime);
+            setText.setText(DownloadTask.setTime);
         }
 
-        count++;
     }
 
     public void onExit(View view){
+
         stopService(new Intent(this,SensorService.class));
         stopService(new Intent(this,MyServiceReverse.class));
         stopService(new Intent(this,MyService.class));
         stopService(new Intent(this,WaitService.class));
         stopService(new Intent(this,DownloadStarter.class));
+        stopService(new Intent(DownloadStarter.DownloadStarterContext,WeatherService.class));
+
 
         finish();
     }
 
-    public void onBackground(View view){
-        onBackPressed();
-    }
 
 }
 

@@ -61,26 +61,59 @@ public class SensorService extends Service implements SensorEventListener{
             msg.arg1= (int) event.values[0];
             handler.sendMessage(msg);
 
-            if(event.values[0]<1254) {
-                if(event.values[0]==0)
-                    brightnessPercent=27;
-                else
-                    brightnessPercent = ((9.932 * Math.log(event.values[0])) + 27.059);
 
-                brightnessValue = (int) (2.55 * brightnessPercent);
-                Log.i(TAG," "+brightnessValue+" "+brightnessPercent);
-                Log.i(TAG,"before bright");
-                setScreenBrightness(brightnessValue);
-                Log.i(TAG,"after bright");
-            }
-            else{
-                setScreenBrightness(255);
-            }
+            if((WeatherService.temp<=295 && WeatherService.temp !=0) || WeatherService.temp >=305 || WeatherService.windSpeed >=6)
+                weatherMethod((int)event.values[0]);
+
+            else
+                normalMethod((int)event.values[0]);
+
+
             //This if else is designed in accordance with the formula submitted in Report.
 
         }
 
     }
+
+
+    public void normalMethod(int ambientLight){
+        if(ambientLight<4064) {
+            if(ambientLight==0)
+                brightnessPercent=25;
+            else
+                brightnessPercent = ((9.62 * Math.log(ambientLight) + 20));
+
+            brightnessValue = (int) (2.55 * brightnessPercent);
+            Log.i(TAG," "+brightnessValue+" "+brightnessPercent);
+            setScreenBrightness(brightnessValue);
+            Log.i(TAG,"Normal Method Used");
+        }
+        else{
+            setScreenBrightness(255);
+        }
+
+    }
+
+
+    public void weatherMethod(int ambientLight){
+        if(ambientLight<99111) {
+            if(ambientLight==0)
+                brightnessPercent=20;
+            else
+                brightnessPercent = ((6.78 * Math.log(ambientLight) + 22));
+
+            brightnessValue = (int) (2.55 * brightnessPercent);
+            Log.i(TAG," "+brightnessValue+" "+brightnessPercent);
+            setScreenBrightness(brightnessValue);
+            Log.i(TAG,"Weather Method Used");
+        }
+        else{
+            setScreenBrightness(255);
+        }
+
+    }
+
+
 
     public void setScreenBrightness(int brightnessValue){
         // Make sure brightness value between 0 to 255

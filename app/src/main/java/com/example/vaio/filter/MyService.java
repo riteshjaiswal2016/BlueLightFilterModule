@@ -9,6 +9,7 @@ import android.graphics.PixelFormat;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PowerManager;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
@@ -22,6 +23,9 @@ public class MyService extends Service {
     final static String TAG = "tag";
     Timer timer;
     static WindowManager wm = null;
+    WindowManager.LayoutParams params;
+    static Message msg;
+    PowerManager.WakeLock wakeLock;
 
 
     Handler handler = new Handler() {
@@ -67,22 +71,31 @@ public class MyService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        linearLayout = new LinearLayout(MainActivity.context);
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                "MyWakelockTag");
+        wakeLock.acquire();
 
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                PixelFormat.TRANSLUCENT);
+        if(linearLayout ==null && wm==null) {
+                    linearLayout = new LinearLayout(MainActivity.context);
 
-        wm = (WindowManager) MainActivity.context.getSystemService(MainActivity.context.WINDOW_SERVICE);
+                    params = new WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    PixelFormat.TRANSLUCENT);
 
-        Message msg = Message.obtain();
-        msg.arg1 = 1;
-        msg.obj = params;
-        handler.sendMessage(msg);
+                    wm = (WindowManager) MainActivity.context.getSystemService(MainActivity.context.WINDOW_SERVICE);
 
-        Log.i(TAG, "overlayed");
+            msg = Message.obtain();
+            msg.arg1 = 1;
+            msg.obj = params;
+            handler.sendMessage(msg);
+
+            Log.i(TAG, "overlayed");
+        }
+
+
 
         timer = new Timer();
         //Setting timer which creates overlay in 30min gradually as suggested in Report
