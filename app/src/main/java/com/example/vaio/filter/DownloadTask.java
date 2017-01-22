@@ -112,6 +112,8 @@ public class DownloadTask extends AsyncTask<String,Void,String> {
                 // ,"sys":{"type":1,"id":7618,"message":0.0095,"country":"JP","sunrise":1482356929,"sunset":1482392227},"id":1851632,"name":"Shuzenji","cod":200}
 
 
+                //overlay's opacity should gradually increase and should take 30 mins to come to it's full value.
+
                 if ((System.currentTimeMillis() <= date1.getTime() - 60 * 60 * 1000)) {
                     Log.i(TAG, "in if");
                     if (MyService.linearLayout != null && MyService.wm != null) {

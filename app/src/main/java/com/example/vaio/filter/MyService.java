@@ -109,7 +109,7 @@ public class MyService extends Service {
                                       }
                                   },
                 0,
-                600);
+                60000);
         //60 Second between each change in overlay opacity and color temp.
 
     }

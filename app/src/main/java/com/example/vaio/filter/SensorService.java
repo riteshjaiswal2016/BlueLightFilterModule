@@ -75,7 +75,7 @@ public class SensorService extends Service implements SensorEventListener{
 
     }
 
-
+//Normal method formula used when there is no possibility of dry eye problem.
     public void normalMethod(int ambientLight){
         if(ambientLight<4064) {
             if(ambientLight==0)
@@ -94,7 +94,7 @@ public class SensorService extends Service implements SensorEventListener{
 
     }
 
-
+    //weather method formula used when there is possibility of dry eye problem.
     public void weatherMethod(int ambientLight){
         if(ambientLight<99111) {
             if(ambientLight==0)
